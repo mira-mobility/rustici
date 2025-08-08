@@ -44,6 +44,24 @@ cargo run --example list_sas
 - VICI plugin docs: https://docs.strongswan.org/docs/latest/plugins/vici.html
 - VICI protocol README (packet/message grammar; transport is length-prefixed with a 32-bit BE header)
 
+## Acknowledgments
+
+This library is a Rust implementation based on the [davici library](https://github.com/strongswan/davici) from the strongSwan project.
+
+strongSwan has been actively developed since 2005, with the modern IKE daemon written from scratch in a modular, object-oriented design. The intellectual property rights to strongSwan were acquired by secunet Security Networks AG in June 2022.
+We thank the strongSwan maintainers and contributors for their excellent work:
+
+Andreas Steffen (strongSec GmbH)
+Tobias Brunner (codelabs GmbH)
+secunet Security Networks AG
+Martin Willi (original davici author)
+
 ## License
 
-Dual-licensed under MIT or Apache-2.0, at your option.
+This library is licensed under the GNU Lesser General Public License v2.1 or later (LGPL-2.1+) (Based on the original davici library).
+
+Rust implementation:
+
+- Copyright (C) 2025 Mira Mobility
+
+See the [LICENSE](LICENSE) file for the full license text.
