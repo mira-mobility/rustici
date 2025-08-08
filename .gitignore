@@ -1,0 +1,53 @@
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+.Spotlight-V100
+.Trashes
+
+# Editors/IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# Logs and debug output
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment files (keep examples)
+.env
+.env.*
+!.env.example
+
+# Rust
+target/
+*.rs.bk
+
+# Coverage artifacts
+*.profraw
+*.profdata
+coverage/
+lcov.info
+
+# Misc
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+
+# Cargo.lock
+# - For libraries (published crates), it's common to ignore Cargo.lock.
+# - For applications/binaries, commit Cargo.lock to ensure reproducible builds.
+# If this is a library, uncomment the next line:
+# Cargo.lock
