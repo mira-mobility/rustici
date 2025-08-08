@@ -51,7 +51,9 @@ impl Client {
             let pkt = self.recv_packet()?;
             match pkt.ty {
                 PacketType::CmdResponse => {
-                    return pkt.message.ok_or(Error::Protocol("response without message"));
+                    // Some VICI commands legitimately return an empty response body.
+                    // Treat a missing message as an empty Message instead of a protocol error.
+                    return Ok(pkt.message.unwrap_or_default());
                 }
                 PacketType::CmdUnknown => {
                     return Err(Error::UnknownCommand(command.to_string()));
@@ -111,7 +113,8 @@ impl Client {
                     }
                 }
                 PacketType::CmdResponse => {
-                    return pkt.message.ok_or(Error::Protocol("response without message"));
+                    // Final response may be empty; surface it as an empty Message.
+                    return Ok(pkt.message.unwrap_or_default());
                 }
                 PacketType::CmdUnknown => return Err(Error::UnknownCommand(command.to_string())),
                 _ => return Err(Error::Protocol("unexpected packet while awaiting streamed response")),
