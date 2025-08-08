@@ -1,0 +1,17 @@
+[package]
+name = "rustici"
+version = "0.1.0"
+edition = "2021"
+description = "Pure-Rust client for strongSwan's VICI protocol (experimental)"
+license = "MIT OR Apache-2.0"
+repository = "https://example.com/placeholder"
+readme = "README.md"
+keywords = ["strongswan", "ipsec", "vici", "vpn"]
+categories = ["network-programming"]
+
+[package.metadata.docs.rs]
+features = []
+
+[features]
+# If you later want async support, add a `tokio` feature here.
+default = []
