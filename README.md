@@ -7,11 +7,10 @@
 </p>
 
 <p align="center">
-  <a href="https://crates.io/crates/rustici"><img src="https://img.shields.io/crates/v/rustici?style=for-the-badge" alt="crates.io" /></a>
-  <a href="https://docs.rs/rustici"><img src="https://img.shields.io/docsrs/rustici?style=for-the-badge" alt="docs.rs" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-LGPL%202.1%2B-blue?style=for-the-badge" alt="License: LGPL-2.1+" /></a>
-  <img src="https://img.shields.io/badge/platform-unix-lightgrey?style=for-the-badge" alt="Platform: Unix" />
-  <img src="https://img.shields.io/badge/rust-2021%20edition-orange?logo=rust&style=for-the-badge" alt="Rust 2021 Edition" />
+  <a href="https://crates.io/crates/rustici"><img src="https://img.shields.io/crates/v/rustici" alt="crates.io" /></a>
+  <a href="https://docs.rs/rustici"><img src="https://img.shields.io/docsrs/rustici" alt="docs.rs" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-LGPL%202.1%2B-blue" alt="License: LGPL-2.1+" /></a>
+  <img src="https://img.shields.io/badge/platform-unix-lightgrey" alt="Platform: Unix" />
 </p>
 
 <p align="center"><em>Status: experimental MVP. Pure <code>std</code>, blocking I/O, UNIX-only. No external deps.</em></p>
