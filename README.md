@@ -1,8 +1,20 @@
-# rustici
+<p align="center">
+  <img src="assets/rustici.svg" alt="rustici logo" height="120" />
+</p>
 
-> A minimal Rust client for the strongSwan **VICI** protocol — inspired by the ideas behind `davici`, but implemented from scratch in Rust.
+<p align="center">
+  A minimal Rust client for the strongSwan <strong>VICI</strong> protocol — inspired by the ideas behind <code>davici</code>, but implemented from scratch in Rust.
+</p>
 
-**Status:** experimental MVP. Pure `std`, blocking I/O, UNIX-only. No external deps.
+<p align="center">
+  <a href="https://crates.io/crates/rustici"><img src="https://img.shields.io/crates/v/rustici?style=for-the-badge" alt="crates.io" /></a>
+  <a href="https://docs.rs/rustici"><img src="https://img.shields.io/docsrs/rustici?style=for-the-badge" alt="docs.rs" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-LGPL%202.1%2B-blue?style=for-the-badge" alt="License: LGPL-2.1+" /></a>
+  <img src="https://img.shields.io/badge/platform-unix-lightgrey?style=for-the-badge" alt="Platform: Unix" />
+  <img src="https://img.shields.io/badge/rust-2021%20edition-orange?logo=rust&style=for-the-badge" alt="Rust 2021 Edition" />
+</p>
+
+<p align="center"><em>Status: experimental MVP. Pure <code>std</code>, blocking I/O, UNIX-only. No external deps.</em></p>
 
 ## Features
 
