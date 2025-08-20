@@ -5,8 +5,8 @@
 //! their own event loop if desired.
 
 use std::io::{Read, Write};
-use std::os::unix::net::UnixStream;
 use std::os::fd::AsRawFd;
+use std::os::unix::net::UnixStream;
 use std::path::Path;
 use std::time::Duration;
 
@@ -30,7 +30,9 @@ impl Client {
     }
 
     /// Returns the raw file descriptor (for integration with `select`/`poll`). Linux/Unix only.
-    pub fn as_raw_fd(&self) -> i32 { self.stream.as_raw_fd() }
+    pub fn as_raw_fd(&self) -> i32 {
+        self.stream.as_raw_fd()
+    }
 
     /// Set read/write timeouts.
     pub fn set_read_timeout(&self, to: Option<Duration>) -> Result<()> {
@@ -44,7 +46,11 @@ impl Client {
     /// Send a *simple* RPC-style command and await its response. Any unsolicited events
     /// received while waiting are ignored.
     pub fn call(&mut self, command: &str, request: &Message) -> Result<Message> {
-        let pkt = Packet { ty: PacketType::CmdRequest, name: Some(command.to_string()), message: Some(request.clone()) };
+        let pkt = Packet {
+            ty: PacketType::CmdRequest,
+            name: Some(command.to_string()),
+            message: Some(request.clone()),
+        };
         self.send_packet(&pkt)?;
 
         loop {
@@ -69,7 +75,11 @@ impl Client {
 
     /// Register for an event name, returning Ok(()) if the daemon confirms.
     pub fn register_event(&mut self, name: &str) -> Result<()> {
-        let pkt = Packet { ty: PacketType::EventRegister, name: Some(name.to_string()), message: None };
+        let pkt = Packet {
+            ty: PacketType::EventRegister,
+            name: Some(name.to_string()),
+            message: None,
+        };
         self.send_packet(&pkt)?;
         let resp = self.recv_packet()?;
         match resp.ty {
@@ -81,7 +91,11 @@ impl Client {
 
     /// Unregister from an event name.
     pub fn unregister_event(&mut self, name: &str) -> Result<()> {
-        let pkt = Packet { ty: PacketType::EventUnregister, name: Some(name.to_string()), message: None };
+        let pkt = Packet {
+            ty: PacketType::EventUnregister,
+            name: Some(name.to_string()),
+            message: None,
+        };
         self.send_packet(&pkt)?;
         let resp = self.recv_packet()?;
         match resp.ty {
@@ -91,15 +105,23 @@ impl Client {
         }
     }
 
-
     /// Execute a *streaming* command that yields one or more EVENT packets and
     /// finally returns a CMD_RESPONSE. For each EVENT, the provided callback is
     /// invoked with `(event_name, event_message)`.
-    pub fn call_streaming<F>(&mut self, command: &str, request: &Message, mut on_event: F) -> Result<Message>
+    pub fn call_streaming<F>(
+        &mut self,
+        command: &str,
+        request: &Message,
+        mut on_event: F,
+    ) -> Result<Message>
     where
         F: FnMut(&str, &Message),
     {
-        let pkt = Packet { ty: PacketType::CmdRequest, name: Some(command.to_string()), message: Some(request.clone()) };
+        let pkt = Packet {
+            ty: PacketType::CmdRequest,
+            name: Some(command.to_string()),
+            message: Some(request.clone()),
+        };
         self.send_packet(&pkt)?;
 
         loop {
@@ -117,7 +139,11 @@ impl Client {
                     return Ok(pkt.message.unwrap_or_default());
                 }
                 PacketType::CmdUnknown => return Err(Error::UnknownCommand(command.to_string())),
-                _ => return Err(Error::Protocol("unexpected packet while awaiting streamed response")),
+                _ => {
+                    return Err(Error::Protocol(
+                        "unexpected packet while awaiting streamed response",
+                    ))
+                }
             }
         }
     }
@@ -127,7 +153,9 @@ impl Client {
             let pkt = self.recv_packet()?;
             if let PacketType::Event = pkt.ty {
                 let name = pkt.name.ok_or(Error::Protocol("event without name"))?;
-                let msg = pkt.message.ok_or(Error::Protocol("event without message"))?;
+                let msg = pkt
+                    .message
+                    .ok_or(Error::Protocol("event without message"))?;
                 return Ok((name, msg));
             }
         }
@@ -138,7 +166,10 @@ impl Client {
         let mut data = Vec::new();
         data.push(pkt.ty as u8);
         if pkt.ty.is_named() {
-            let name = pkt.name.as_ref().ok_or(Error::Protocol("named packet missing name"))?;
+            let name = pkt
+                .name
+                .as_ref()
+                .ok_or(Error::Protocol("named packet missing name"))?;
             encode_name(&mut data, name)?;
         }
         if let Some(msg) = &pkt.message {
@@ -199,15 +230,21 @@ impl Client {
 // --- Small local helpers (mirror what's in wire.rs but private here) ---
 
 fn decode_u8(input: &[u8]) -> Result<(u8, &[u8])> {
-    if input.is_empty() { return Err(Error::Protocol("unexpected EOF reading u8")); }
+    if input.is_empty() {
+        return Err(Error::Protocol("unexpected EOF reading u8"));
+    }
     Ok((input[0], &input[1..]))
 }
 
 fn decode_name(input: &[u8]) -> Result<(String, &[u8])> {
-    if input.is_empty() { return Err(Error::Protocol("unexpected EOF reading name length")); }
+    if input.is_empty() {
+        return Err(Error::Protocol("unexpected EOF reading name length"));
+    }
     let len = input[0] as usize;
     let input = &input[1..];
-    if input.len() < len { return Err(Error::Protocol("unexpected EOF reading name bytes")); }
+    if input.len() < len {
+        return Err(Error::Protocol("unexpected EOF reading name bytes"));
+    }
     let name = String::from_utf8(input[..len].to_vec())?;
     Ok((name, &input[len..]))
 }

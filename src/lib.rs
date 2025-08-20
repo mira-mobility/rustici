@@ -22,12 +22,12 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+pub mod client;
 pub mod error;
 pub mod packet;
 pub mod wire;
-pub mod client;
 
 // Re-export primary types
 pub use crate::client::Client;
-pub use crate::wire::Message;
 pub use crate::packet::{Packet, PacketType};
+pub use crate::wire::Message;
