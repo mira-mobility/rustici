@@ -7,8 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://crates.io/crates/rustici"><img src="https://img.shields.io/crates/v/rustici" alt="crates.io" /></a>
-  <a href="https://docs.rs/rustici"><img src="https://img.shields.io/docsrs/rustici" alt="docs.rs" /></a>
+  <a href="https://github.com/mira-mobility/rustici/actions/workflows/ci.yml"><img src="https://github.com/mira-mobility/control-center/actions/workflows/ci.yml/badge.svg" alt="crates.io" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-LGPL%202.1%2B-blue" alt="License: LGPL-2.1+" /></a>
   <img src="https://img.shields.io/badge/platform-unix-lightgrey" alt="Platform: Unix" />
 </p>
