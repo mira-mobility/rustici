@@ -71,23 +71,35 @@ pub struct Message {
 
 impl Message {
     /// Create an empty message.
-    pub fn new() -> Self { Self { elements: Vec::new() } }
+    pub fn new() -> Self {
+        Self {
+            elements: Vec::new(),
+        }
+    }
 
     /// Borrow inner elements.
-    pub fn elements(&self) -> &[Element] { &self.elements }
+    pub fn elements(&self) -> &[Element] {
+        &self.elements
+    }
 
     /// Push a raw element.
-    pub fn push(&mut self, el: Element) { self.elements.push(el); }
+    pub fn push(&mut self, el: Element) {
+        self.elements.push(el);
+    }
 
     /// Convenience: add key/value where the value is a string.
     pub fn kv_str(mut self, name: impl Into<String>, value: impl AsRef<str>) -> Self {
-        self.elements.push(Element::KeyValue(name.into(), value.as_ref().as_bytes().to_vec()));
+        self.elements.push(Element::KeyValue(
+            name.into(),
+            value.as_ref().as_bytes().to_vec(),
+        ));
         self
     }
 
     /// Convenience: add key/value where the value is raw bytes.
     pub fn kv_bytes(mut self, name: impl Into<String>, value: impl AsRef<[u8]>) -> Self {
-        self.elements.push(Element::KeyValue(name.into(), value.as_ref().to_vec()));
+        self.elements
+            .push(Element::KeyValue(name.into(), value.as_ref().to_vec()));
         self
     }
 
@@ -111,13 +123,15 @@ impl Message {
 
     /// Add a list item (string value convenience).
     pub fn list_item_str(mut self, value: impl AsRef<str>) -> Self {
-        self.elements.push(Element::ListItem(value.as_ref().as_bytes().to_vec()));
+        self.elements
+            .push(Element::ListItem(value.as_ref().as_bytes().to_vec()));
         self
     }
 
     /// Add a list item (raw bytes).
     pub fn list_item_bytes(mut self, value: impl AsRef<[u8]>) -> Self {
-        self.elements.push(Element::ListItem(value.as_ref().to_vec()));
+        self.elements
+            .push(Element::ListItem(value.as_ref().to_vec()));
         self
     }
 
@@ -134,7 +148,7 @@ impl Message {
             el.encode_into(&mut out)?;
         }
         Ok(out)
-        }
+    }
 
     /// Decode a message from bytes.
     pub fn decode(mut bytes: &[u8]) -> Result<Self> {
@@ -168,18 +182,24 @@ fn encode_value(out: &mut Vec<u8>, value: &[u8]) -> Result<()> {
 }
 
 fn decode_u8(input: &[u8]) -> Result<(u8, &[u8])> {
-    if input.is_empty() { return Err(Error::Protocol("unexpected EOF reading u8")); }
+    if input.is_empty() {
+        return Err(Error::Protocol("unexpected EOF reading u8"));
+    }
     Ok((input[0], &input[1..]))
 }
 
 fn decode_be_u16(input: &[u8]) -> Result<(u16, &[u8])> {
-    if input.len() < 2 { return Err(Error::Protocol("unexpected EOF reading u16")); }
+    if input.len() < 2 {
+        return Err(Error::Protocol("unexpected EOF reading u16"));
+    }
     let v = u16::from_be_bytes([input[0], input[1]]);
     Ok((v, &input[2..]))
 }
 
 fn take(input: &[u8], n: usize) -> Result<(&[u8], &[u8])> {
-    if input.len() < n { return Err(Error::Protocol("unexpected EOF taking slice")); }
+    if input.len() < n {
+        return Err(Error::Protocol("unexpected EOF taking slice"));
+    }
     Ok((&input[..n], &input[n..]))
 }
 
@@ -198,7 +218,8 @@ fn decode_value(input: &[u8]) -> Result<(Vec<u8>, &[u8])> {
 fn decode_element(input: &[u8]) -> Result<(Element, &[u8])> {
     let (tag, input) = decode_u8(input)?;
     match tag {
-        1 => { // SECTION_START
+        1 => {
+            // SECTION_START
             let (name, rest) = decode_name(input)?;
             Ok((Element::SectionStart(name), rest))
         }
@@ -227,19 +248,15 @@ impl fmt::Display for Message {
             match el {
                 Element::SectionStart(n) => writeln!(f, "<section {n}>")?,
                 Element::SectionEnd => writeln!(f, "</section>")?,
-                Element::KeyValue(k, v) => {
-                    match String::from_utf8(v.clone()) {
-                        Ok(s) => writeln!(f, "{k} = {s}")?,
-                        Err(_) => writeln!(f, "{k} = 0x{}", hex(v))?,
-                    }
-                }
+                Element::KeyValue(k, v) => match String::from_utf8(v.clone()) {
+                    Ok(s) => writeln!(f, "{k} = {s}")?,
+                    Err(_) => writeln!(f, "{k} = 0x{}", hex(v))?,
+                },
                 Element::ListStart(n) => writeln!(f, "<list {n}>")?,
-                Element::ListItem(v) => {
-                    match String::from_utf8(v.clone()) {
-                        Ok(s) => writeln!(f, "- {s}")?,
-                        Err(_) => writeln!(f, "- 0x{}", hex(v))?,
-                    }
-                }
+                Element::ListItem(v) => match String::from_utf8(v.clone()) {
+                    Ok(s) => writeln!(f, "- {s}")?,
+                    Err(_) => writeln!(f, "- 0x{}", hex(v))?,
+                },
                 Element::ListEnd => writeln!(f, "</list>")?,
             }
         }

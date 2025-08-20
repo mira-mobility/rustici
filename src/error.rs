@@ -20,11 +20,15 @@ pub enum Error {
 }
 
 impl From<io::Error> for Error {
-    fn from(e: io::Error) -> Self { Error::Io(e) }
+    fn from(e: io::Error) -> Self {
+        Error::Io(e)
+    }
 }
 
 impl From<FromUtf8Error> for Error {
-    fn from(e: FromUtf8Error) -> Self { Error::Utf8(e) }
+    fn from(e: FromUtf8Error) -> Self {
+        Error::Utf8(e)
+    }
 }
 
 impl fmt::Display for Error {

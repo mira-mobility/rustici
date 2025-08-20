@@ -28,18 +28,19 @@ pub enum PacketType {
 impl PacketType {
     /// Whether this packet carries a "name" field (single-byte length + ASCII bytes).
     pub fn is_named(self) -> bool {
-        matches!(self,
-            PacketType::CmdRequest |
-            PacketType::EventRegister |
-            PacketType::EventUnregister |
-            PacketType::Event
+        matches!(
+            self,
+            PacketType::CmdRequest
+                | PacketType::EventRegister
+                | PacketType::EventUnregister
+                | PacketType::Event
         )
     }
 }
 
 impl fmt::Display for PacketType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }
 
