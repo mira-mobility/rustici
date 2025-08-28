@@ -1,17 +1,50 @@
 [package]
 name = "rustici"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
-description = "Pure-Rust client for strongSwan's VICI protocol (experimental)"
-license = "MIT OR Apache-2.0"
-repository = "https://example.com/placeholder"
+authors = ["mira-mobility"]
+description = "Pure-Rust client for strongSwan's VICI protocol"
+documentation = "https://docs.rs/rustici"
+homepage = "https://github.com/mira-mobility/rustici"
+repository = "https://github.com/mira-mobility/rustici"
+license = "LGPL-2.1-or-later"
 readme = "README.md"
-keywords = ["strongswan", "ipsec", "vici", "vpn"]
-categories = ["network-programming"]
+keywords = ["strongswan", "ipsec", "vici", "vpn", "ike"]
+categories = ["network-programming", "api-bindings"]
+rust-version = "1.65"  # Minimum supported Rust version
+include = [
+    "src/**/*",
+    "examples/**/*",
+    "LICENSE",
+    "README.md",
+    "CONTRIBUTING.md",
+    "Cargo.toml"
+]
 
 [package.metadata.docs.rs]
-features = []
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-# If you later want async support, add a `tokio` feature here.
 default = []
+# Future features could be added here, e.g.:
+# async = ["dep:tokio"]
+
+[[example]]
+name = "list_sas"
+path = "examples/list_sas.rs"
+
+[[example]]
+name = "list_sas_streaming"
+path = "examples/list_sas_streaming.rs"
+
+[dev-dependencies]
+# Add any dev dependencies needed for tests/examples here
+# For example:
+# tempfile = "3"  # If you need temp files for testing
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3
+strip = true
