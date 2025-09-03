@@ -23,28 +23,128 @@ pub struct Client {
 }
 
 impl Client {
-    /// Connect to a VICI UNIX socket (e.g., `/var/run/charon.vici`).
+    /// Connect to a VICI UNIX socket.
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - Path to the UNIX socket (typically `/var/run/charon.vici`)
+    ///
+    /// # Returns
+    ///
+    /// Returns a connected `Client` on success, or an `Error` if the connection fails.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use rustici::Client;
+    ///
+    /// let client = Client::connect("/var/run/charon.vici")?;
+    /// ```
     pub fn connect<P: AsRef<Path>>(path: P) -> Result<Self> {
         let stream = UnixStream::connect(path)?;
         Ok(Self { stream })
     }
 
-    /// Returns the raw file descriptor (for integration with `select`/`poll`). Linux/Unix only.
+    /// Returns the raw file descriptor for integration with `select`/`poll`.
+    ///
+    /// This is useful for integrating the client into custom event loops
+    /// or for monitoring multiple file descriptors simultaneously.
+    ///
+    /// # Platform support
+    ///
+    /// Linux/Unix only.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use rustici::Client;
+    ///
+    /// let client = Client::connect("/var/run/charon.vici")?;
+    /// let fd = client.as_raw_fd();
+    /// // Use fd with select(), poll(), or epoll
+    /// ```
     pub fn as_raw_fd(&self) -> i32 {
         self.stream.as_raw_fd()
     }
 
-    /// Set read/write timeouts.
+    /// Set the read timeout for socket operations.
+    ///
+    /// When set, read operations will fail with a timeout error if they
+    /// don't complete within the specified duration.
+    ///
+    /// # Arguments
+    ///
+    /// * `to` - The timeout duration, or `None` to disable timeouts (blocking mode)
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` on success, or an `Error` if setting the timeout fails.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use std::time::Duration;
+    /// use rustici::Client;
+    ///
+    /// let client = Client::connect("/var/run/charon.vici")?;
+    /// client.set_read_timeout(Some(Duration::from_secs(5)))?;
+    /// ```
     pub fn set_read_timeout(&self, to: Option<Duration>) -> Result<()> {
         self.stream.set_read_timeout(to).map_err(Error::Io)
     }
-    /// Set write timeout on the underlying socket.
+
+    /// Set the write timeout for socket operations.
+    ///
+    /// When set, write operations will fail with a timeout error if they
+    /// don't complete within the specified duration.
+    ///
+    /// # Arguments
+    ///
+    /// * `to` - The timeout duration, or `None` to disable timeouts (blocking mode)
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` on success, or an `Error` if setting the timeout fails.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use std::time::Duration;
+    /// use rustici::Client;
+    ///
+    /// let client = Client::connect("/var/run/charon.vici")?;
+    /// client.set_write_timeout(Some(Duration::from_secs(5)))?;
+    /// ```
     pub fn set_write_timeout(&self, to: Option<Duration>) -> Result<()> {
         self.stream.set_write_timeout(to).map_err(Error::Io)
     }
 
-    /// Send a *simple* RPC-style command and await its response. Any unsolicited events
-    /// received while waiting are ignored.
+    /// Send a simple RPC-style command and await its response.
+    ///
+    /// This method sends a command request and waits for the corresponding
+    /// response. Any unsolicited events received while waiting are silently
+    /// ignored.
+    ///
+    /// # Arguments
+    ///
+    /// * `command` - The VICI command name (e.g., "version", "list-sas", "initiate")
+    /// * `request` - The message payload for the command
+    ///
+    /// # Returns
+    ///
+    /// Returns the response `Message` on success. If the command is unknown
+    /// to the daemon, returns `Error::UnknownCommand`. Empty responses are
+    /// returned as empty `Message` objects.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use rustici::{Client, wire::Message};
+    ///
+    /// let mut client = Client::connect("/var/run/charon.vici")?;
+    /// let response = client.call("version", &Message::new())?;
+    /// println!("Response: {}", response);
+    /// ```
     pub fn call(&mut self, command: &str, request: &Message) -> Result<Message> {
         let pkt = Packet {
             ty: PacketType::CmdRequest,
@@ -73,7 +173,29 @@ impl Client {
         }
     }
 
-    /// Register for an event name, returning Ok(()) if the daemon confirms.
+    /// Register to receive events of a specific type.
+    ///
+    /// After successful registration, the client will receive events of the
+    /// specified type which can be retrieved using `next_event()` or related methods.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The event type name (e.g., "ike-updown", "child-updown", "log")
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` if registration succeeds, or an error if the event
+    /// type is unknown or registration fails.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use rustici::Client;
+    ///
+    /// let mut client = Client::connect("/var/run/charon.vici")?;
+    /// client.register_event("ike-updown")?;
+    /// // Now the client will receive IKE SA up/down events
+    /// ```
     pub fn register_event(&mut self, name: &str) -> Result<()> {
         let pkt = Packet {
             ty: PacketType::EventRegister,
@@ -89,7 +211,30 @@ impl Client {
         }
     }
 
-    /// Unregister from an event name.
+    /// Unregister from receiving events of a specific type.
+    ///
+    /// After successful unregistration, the client will no longer receive
+    /// events of the specified type.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The event type name to unregister from
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` if unregistration succeeds, or an error if it fails.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use rustici::Client;
+    ///
+    /// let mut client = Client::connect("/var/run/charon.vici")?;
+    /// client.register_event("log")?;
+    /// // ... receive some log events ...
+    /// client.unregister_event("log")?;
+    /// // No more log events will be received
+    /// ```
     pub fn unregister_event(&mut self, name: &str) -> Result<()> {
         let pkt = Packet {
             ty: PacketType::EventUnregister,
@@ -105,9 +250,33 @@ impl Client {
         }
     }
 
-    /// Execute a *streaming* command that yields one or more EVENT packets and
-    /// finally returns a CMD_RESPONSE. For each EVENT, the provided callback is
-    /// invoked with `(event_name, event_message)`.
+    /// Execute a streaming command that yields multiple events before completing.
+    ///
+    /// Some VICI commands (like "list-sas", "list-conns") stream multiple event
+    /// packets before sending a final response. This method handles the streaming
+    /// protocol and invokes the callback for each event.
+    ///
+    /// # Arguments
+    ///
+    /// * `command` - The streaming command name
+    /// * `request` - The message payload for the command
+    /// * `on_event` - Callback invoked for each streamed event with (event_name, event_message)
+    ///
+    /// # Returns
+    ///
+    /// Returns the final response message after all events have been streamed.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use rustici::{Client, wire::Message};
+    ///
+    /// let mut client = Client::connect("/var/run/charon.vici")?;
+    /// let response = client.call_streaming("list-sas", &Message::new(), |name, msg| {
+    ///     println!("Event {}: {}", name, msg);
+    /// })?;
+    /// println!("Final response: {}", response);
+    /// ```
     pub fn call_streaming<F>(
         &mut self,
         command: &str,
@@ -147,7 +316,36 @@ impl Client {
             }
         }
     }
-    /// Block until the next event message arrives. Returns the (event name, message).
+
+    /// Block until the next event message arrives.
+    ///
+    /// This method blocks indefinitely waiting for an event. You must have
+    /// registered for at least one event type using `register_event()` to
+    /// receive events.
+    ///
+    /// # Returns
+    ///
+    /// Returns a tuple of (event_name, event_message) when an event arrives.
+    ///
+    /// # Note
+    ///
+    /// This method will block forever if no events arrive. Consider using
+    /// `next_event_with_timeout()` or `try_next_event()` for non-blocking
+    /// alternatives.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use rustici::Client;
+    ///
+    /// let mut client = Client::connect("/var/run/charon.vici")?;
+    /// client.register_event("ike-updown")?;
+    ///
+    /// loop {
+    ///     let (event_name, message) = client.next_event()?;
+    ///     println!("Received event: {}", event_name);
+    /// }
+    /// ```
     pub fn next_event(&mut self) -> Result<(String, Message)> {
         loop {
             let pkt = self.recv_packet()?;
