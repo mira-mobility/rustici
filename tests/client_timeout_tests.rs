@@ -199,7 +199,7 @@ fn test_next_event_with_timeout_actually_times_out() {
 
     // Try to get an event - should timeout
     let start = Instant::now();
-    let result = client.next_event_with_timeout();
+    let result = client.next_event();
     let elapsed = start.elapsed();
 
     // Verify it timed out
@@ -277,7 +277,7 @@ fn test_timeout_methods_receive_events_when_available() {
         .expect("Failed to set timeout");
 
     let start = Instant::now();
-    let result = client.next_event_with_timeout();
+    let result = client.next_event();
     let elapsed = start.elapsed();
 
     // Should receive event before timeout

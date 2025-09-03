@@ -343,68 +343,17 @@ impl Client {
 
     /// Block until the next event message arrives.
     ///
-    /// This method blocks indefinitely waiting for an event. You must have
-    /// registered for at least one event type using `register_event()` to
-    /// receive events.
+    /// This method blocks waiting for an event. If a read timeout is set via
+    /// `set_read_timeout()`, it will return `Err(Error::Timeout)` if no event
+    /// arrives within the timeout period. Without a timeout, it blocks indefinitely.
+    ///
+    /// You must have registered for at least one event type using `register_event()`
+    /// to receive events.
     ///
     /// # Returns
     ///
-    /// Returns a tuple of (event_name, event_message) when an event arrives.
-    ///
-    /// # Note
-    ///
-    /// This method will block forever if no events arrive. Consider using
-    /// `next_event_with_timeout()` or `try_next_event()` for non-blocking
-    /// alternatives.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use rustici::Client;
-    ///
-    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let mut client = Client::connect("/var/run/charon.vici")?;
-    /// client.register_event("ike-updown")?;
-    ///
-    /// loop {
-    ///     let (event_name, message) = client.next_event()?;
-    ///     println!("Received event: {}", event_name);
-    /// }
-    /// # Ok(())
-    /// # }
-    /// ```
-    /// use rustici::Client;
-    ///
-    /// let mut client = Client::connect("/var/run/charon.vici")?;
-    /// client.register_event("ike-updown")?;
-    ///
-    /// loop {
-    ///     let (event_name, message) = client.next_event()?;
-    ///     println!("Received event: {}", event_name);
-    /// }
-    /// ```
-    pub fn next_event(&mut self) -> Result<(String, Message)> {
-        loop {
-            let pkt = self.recv_packet()?;
-            if let PacketType::Event = pkt.ty {
-                let name = pkt.name.ok_or(Error::Protocol("event without name"))?;
-                let msg = pkt
-                    .message
-                    .ok_or(Error::Protocol("event without message"))?;
-                return Ok((name, msg));
-            }
-        }
-    }
-
-    /// Block until the next event message arrives or timeout occurs.
-    ///
-    /// This method respects the read timeout set via `set_read_timeout()`.
-    /// If no timeout is set, it behaves identically to `next_event()`.
-    ///
-    /// # Returns
-    ///
-    /// Returns `Ok((event_name, event_message))` when an event arrives, or
-    /// `Err(Error::Timeout)` if the timeout expires before an event is received.
+    /// Returns a tuple of (event_name, event_message) when an event arrives, or
+    /// `Err(Error::Timeout)` if a timeout is set and expires.
     ///
     /// # Example
     ///
@@ -414,23 +363,23 @@ impl Client {
     ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let mut client = Client::connect("/var/run/charon.vici")?;
-    /// client.set_read_timeout(Some(Duration::from_secs(1)))?;
     /// client.register_event("ike-updown")?;
     ///
-    /// loop {
-    ///     match client.next_event_with_timeout() {
-    ///         Ok((name, msg)) => println!("Got event: {}", name),
-    ///         Err(Error::Timeout) => {
-    ///             println!("No event within timeout period");
-    ///             // Check shutdown flags or do other work
-    ///         }
-    ///         Err(e) => eprintln!("Error: {}", e),
-    ///     }
+    /// // Without timeout - blocks indefinitely
+    /// let (event_name, message) = client.next_event()?;
+    /// println!("Received event: {}", event_name);
+    ///
+    /// // With timeout - returns Error::Timeout if no event within timeout
+    /// client.set_read_timeout(Some(Duration::from_secs(1)))?;
+    /// match client.next_event() {
+    ///     Ok((name, msg)) => println!("Got event: {}", name),
+    ///     Err(Error::Timeout) => println!("No event within timeout period"),
+    ///     Err(e) => eprintln!("Error: {}", e),
     /// }
     /// # Ok(())
     /// # }
     /// ```
-    pub fn next_event_with_timeout(&mut self) -> Result<(String, Message)> {
+    pub fn next_event(&mut self) -> Result<(String, Message)> {
         loop {
             let pkt = match self.recv_packet() {
                 Ok(pkt) => pkt,
@@ -497,7 +446,7 @@ impl Client {
         self.set_read_timeout(Some(timeout))?;
 
         // Try to get next event
-        let result = self.next_event_with_timeout();
+        let result = self.next_event();
 
         // Restore previous timeout
         self.set_read_timeout(previous_timeout)?;
