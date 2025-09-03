@@ -38,7 +38,10 @@ impl Client {
     /// ```no_run
     /// use rustici::Client;
     ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::connect("/var/run/charon.vici")?;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn connect<P: AsRef<Path>>(path: P) -> Result<Self> {
         let stream = UnixStream::connect(path)?;
@@ -59,9 +62,12 @@ impl Client {
     /// ```no_run
     /// use rustici::Client;
     ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::connect("/var/run/charon.vici")?;
     /// let fd = client.as_raw_fd();
     /// // Use fd with select(), poll(), or epoll
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn as_raw_fd(&self) -> i32 {
         self.stream.as_raw_fd()
@@ -86,8 +92,11 @@ impl Client {
     /// use std::time::Duration;
     /// use rustici::Client;
     ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::connect("/var/run/charon.vici")?;
     /// client.set_read_timeout(Some(Duration::from_secs(5)))?;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn set_read_timeout(&self, to: Option<Duration>) -> Result<()> {
         self.stream.set_read_timeout(to).map_err(Error::Io)
@@ -112,8 +121,11 @@ impl Client {
     /// use std::time::Duration;
     /// use rustici::Client;
     ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = Client::connect("/var/run/charon.vici")?;
     /// client.set_write_timeout(Some(Duration::from_secs(5)))?;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn set_write_timeout(&self, to: Option<Duration>) -> Result<()> {
         self.stream.set_write_timeout(to).map_err(Error::Io)
@@ -141,9 +153,12 @@ impl Client {
     /// ```no_run
     /// use rustici::{Client, wire::Message};
     ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let mut client = Client::connect("/var/run/charon.vici")?;
     /// let response = client.call("version", &Message::new())?;
     /// println!("Response: {}", response);
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn call(&mut self, command: &str, request: &Message) -> Result<Message> {
         let pkt = Packet {
@@ -192,9 +207,12 @@ impl Client {
     /// ```no_run
     /// use rustici::Client;
     ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let mut client = Client::connect("/var/run/charon.vici")?;
     /// client.register_event("ike-updown")?;
     /// // Now the client will receive IKE SA up/down events
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn register_event(&mut self, name: &str) -> Result<()> {
         let pkt = Packet {
@@ -229,11 +247,14 @@ impl Client {
     /// ```no_run
     /// use rustici::Client;
     ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let mut client = Client::connect("/var/run/charon.vici")?;
     /// client.register_event("log")?;
     /// // ... receive some log events ...
     /// client.unregister_event("log")?;
     /// // No more log events will be received
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn unregister_event(&mut self, name: &str) -> Result<()> {
         let pkt = Packet {
@@ -271,11 +292,14 @@ impl Client {
     /// ```no_run
     /// use rustici::{Client, wire::Message};
     ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let mut client = Client::connect("/var/run/charon.vici")?;
     /// let response = client.call_streaming("list-sas", &Message::new(), |name, msg| {
     ///     println!("Event {}: {}", name, msg);
     /// })?;
     /// println!("Final response: {}", response);
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn call_streaming<F>(
         &mut self,
@@ -338,6 +362,19 @@ impl Client {
     /// ```no_run
     /// use rustici::Client;
     ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let mut client = Client::connect("/var/run/charon.vici")?;
+    /// client.register_event("ike-updown")?;
+    ///
+    /// loop {
+    ///     let (event_name, message) = client.next_event()?;
+    ///     println!("Received event: {}", event_name);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    /// use rustici::Client;
+    ///
     /// let mut client = Client::connect("/var/run/charon.vici")?;
     /// client.register_event("ike-updown")?;
     ///
@@ -375,6 +412,7 @@ impl Client {
     /// use std::time::Duration;
     /// use rustici::{Client, error::Error};
     ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let mut client = Client::connect("/var/run/charon.vici")?;
     /// client.set_read_timeout(Some(Duration::from_secs(1)))?;
     /// client.register_event("ike-updown")?;
@@ -389,6 +427,8 @@ impl Client {
     ///         Err(e) => eprintln!("Error: {}", e),
     ///     }
     /// }
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn next_event_with_timeout(&mut self) -> Result<(String, Message)> {
         loop {
@@ -437,6 +477,7 @@ impl Client {
     /// use std::time::Duration;
     /// use rustici::{Client, error::Error};
     ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let mut client = Client::connect("/var/run/charon.vici")?;
     /// client.register_event("log")?;
     ///
@@ -445,6 +486,8 @@ impl Client {
     ///     Err(Error::Timeout) => println!("No event within 500ms"),
     ///     Err(e) => eprintln!("Error: {}", e),
     /// }
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn try_next_event(&mut self, timeout: Duration) -> Result<(String, Message)> {
         // Save current timeout
