@@ -161,6 +161,109 @@ impl Client {
         }
     }
 
+    /// Block until the next event message arrives or timeout occurs.
+    ///
+    /// This method respects the read timeout set via `set_read_timeout()`.
+    /// If no timeout is set, it behaves identically to `next_event()`.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok((event_name, event_message))` when an event arrives, or
+    /// `Err(Error::Timeout)` if the timeout expires before an event is received.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use std::time::Duration;
+    /// use rustici::{Client, error::Error};
+    ///
+    /// let mut client = Client::connect("/var/run/charon.vici")?;
+    /// client.set_read_timeout(Some(Duration::from_secs(1)))?;
+    /// client.register_event("ike-updown")?;
+    ///
+    /// loop {
+    ///     match client.next_event_with_timeout() {
+    ///         Ok((name, msg)) => println!("Got event: {}", name),
+    ///         Err(Error::Timeout) => {
+    ///             println!("No event within timeout period");
+    ///             // Check shutdown flags or do other work
+    ///         }
+    ///         Err(e) => eprintln!("Error: {}", e),
+    ///     }
+    /// }
+    /// ```
+    pub fn next_event_with_timeout(&mut self) -> Result<(String, Message)> {
+        loop {
+            let pkt = match self.recv_packet() {
+                Ok(pkt) => pkt,
+                Err(e) => {
+                    // Convert I/O timeout errors to our Timeout error
+                    if let Error::Io(ref io_err) = e {
+                        if io_err.kind() == std::io::ErrorKind::TimedOut
+                            || io_err.kind() == std::io::ErrorKind::WouldBlock
+                        {
+                            return Err(Error::Timeout);
+                        }
+                    }
+                    return Err(e);
+                }
+            };
+
+            if let PacketType::Event = pkt.ty {
+                let name = pkt.name.ok_or(Error::Protocol("event without name"))?;
+                let msg = pkt
+                    .message
+                    .ok_or(Error::Protocol("event without message"))?;
+                return Ok((name, msg));
+            }
+        }
+    }
+
+    /// Try to receive the next event with a specific timeout.
+    ///
+    /// This is a convenience method that temporarily sets the read timeout,
+    /// attempts to receive an event, and then restores the previous timeout.
+    ///
+    /// # Arguments
+    ///
+    /// * `timeout` - Maximum duration to wait for an event
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok((event_name, event_message))` if an event arrives within
+    /// the timeout, or `Err(Error::Timeout)` if the timeout expires.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use std::time::Duration;
+    /// use rustici::{Client, error::Error};
+    ///
+    /// let mut client = Client::connect("/var/run/charon.vici")?;
+    /// client.register_event("log")?;
+    ///
+    /// match client.try_next_event(Duration::from_millis(500)) {
+    ///     Ok((name, msg)) => println!("Got event: {}", name),
+    ///     Err(Error::Timeout) => println!("No event within 500ms"),
+    ///     Err(e) => eprintln!("Error: {}", e),
+    /// }
+    /// ```
+    pub fn try_next_event(&mut self, timeout: Duration) -> Result<(String, Message)> {
+        // Save current timeout
+        let previous_timeout = self.stream.read_timeout().ok().flatten();
+
+        // Set new timeout
+        self.set_read_timeout(Some(timeout))?;
+
+        // Try to get next event
+        let result = self.next_event_with_timeout();
+
+        // Restore previous timeout
+        self.set_read_timeout(previous_timeout)?;
+
+        result
+    }
+
     /// Send a packet (encodes transport frame).
     fn send_packet(&mut self, pkt: &Packet) -> Result<()> {
         let mut data = Vec::new();
