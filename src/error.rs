@@ -17,6 +17,8 @@ pub enum Error {
     TooLong(&'static str),
     /// UTF-8 conversion failed (when interpreting bytes as a String).
     Utf8(FromUtf8Error),
+    /// Operation timed out.
+    Timeout,
 }
 
 impl From<io::Error> for Error {
@@ -39,6 +41,7 @@ impl fmt::Display for Error {
             Error::UnknownCommand(cmd) => write!(f, "unknown command: {cmd}"),
             Error::TooLong(what) => write!(f, "value too long: {what}"),
             Error::Utf8(e) => write!(f, "utf-8 error: {e}"),
+            Error::Timeout => write!(f, "operation timed out"),
         }
     }
 }
