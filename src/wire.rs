@@ -19,7 +19,7 @@ use crate::error::{Error, Result};
 use std::fmt;
 
 /// A single message element.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum Element {
     /// Begin a named section.
     SectionStart(String),
@@ -33,6 +33,34 @@ pub enum Element {
     ListItem(Vec<u8>),
     /// End the most recently opened list.
     ListEnd,
+}
+
+impl fmt::Debug for Element {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Element::SectionStart(name) => f.debug_tuple("SectionStart").field(name).finish(),
+            Element::SectionEnd => write!(f, "SectionEnd"),
+            Element::KeyValue(key, value) => {
+                let mut t = f.debug_tuple("KeyValue");
+                t.field(key);
+                match std::str::from_utf8(value) {
+                    Ok(s) => t.field(&s),
+                    Err(_) => t.field(value),
+                };
+                t.finish()
+            }
+            Element::ListStart(name) => f.debug_tuple("ListStart").field(name).finish(),
+            Element::ListItem(value) => {
+                let mut t = f.debug_tuple("ListItem");
+                match std::str::from_utf8(value) {
+                    Ok(s) => t.field(&s),
+                    Err(_) => t.field(value),
+                };
+                t.finish()
+            }
+            Element::ListEnd => write!(f, "ListEnd"),
+        }
+    }
 }
 
 impl Element {
